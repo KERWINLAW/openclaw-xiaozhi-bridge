@@ -452,16 +452,23 @@ class CLIDisplay:
         """移除所有标准输出的日志处理器."""
         root = logging.getLogger()
 
+        def is_console_handler(handler: logging.Handler) -> bool:
+            if isinstance(handler, logging.FileHandler):
+                return False
+            if not isinstance(handler, logging.StreamHandler):
+                return False
+            return getattr(handler, "stream", None) in (sys.stdout, sys.stderr)
+
         # 移除根 logger 的所有 StreamHandler
         for h in list(root.handlers):
-            if isinstance(h, logging.StreamHandler):
+            if is_console_handler(h):
                 root.removeHandler(h)
 
         # 移除所有已注册 logger 的 StreamHandler
         for name in list(logging.Logger.manager.loggerDict.keys()):
             log = logging.getLogger(name)
             for h in list(log.handlers):
-                if isinstance(h, logging.StreamHandler):
+                if is_console_handler(h):
                     log.removeHandler(h)
 
         # 设置根 logger 级别

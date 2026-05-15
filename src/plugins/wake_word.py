@@ -3,6 +3,7 @@
 检测唤醒词并触发对话。
 """
 
+import asyncio
 from typing import TYPE_CHECKING, Optional
 
 from src.constants.constants import AbortReason
@@ -23,6 +24,9 @@ class WakeWordPlugin(Plugin):
     def __init__(self) -> None:
         super().__init__()
         self.detector = None
+        self._detector_started = False
+        self._start_task_pending = False
+        self._start_lock = asyncio.Lock()
 
     @property
     def _audio_plugin(self):
@@ -62,20 +66,43 @@ class WakeWordPlugin(Plugin):
         await self.reload_model()
 
     async def start(self) -> None:
-        if not self.detector:
+        if not self.detector or self._detector_started or self._start_task_pending:
             return
+        self._start_task_pending = True
+        task = self._cmd.spawn(
+            self._start_detector_after_delay(),
+            name="wake_word:start",
+        )
+        if task is None:
+            self._start_task_pending = False
+
+    async def _start_detector_after_delay(self) -> None:
         try:
-            if not self._audio_plugin or not self._audio_plugin.codec:
-                logger.warning("未找到 audio_codec，无法启动唤醒词检测")
+            await asyncio.sleep(0.5)
+            await self._start_detector_now()
+        finally:
+            self._start_task_pending = False
+
+    async def _start_detector_now(self) -> None:
+        async with self._start_lock:
+            if not self.detector:
                 return
-            await self.detector.start(self._audio_plugin.codec)
-        except Exception as e:
-            logger.error(f"启动唤醒词检测器失败: {e}", exc_info=True)
+            if self._detector_started:
+                logger.debug("唤醒词检测器已在运行，跳过重复启动")
+                return
+            try:
+                if not self._audio_plugin or not self._audio_plugin.codec:
+                    logger.warning("未找到 audio_codec，无法启动唤醒词检测")
+                    return
+                self._detector_started = await self.detector.start(self._audio_plugin.codec)
+            except Exception as e:
+                logger.error(f"启动唤醒词检测器失败: {e}", exc_info=True)
 
     async def stop(self) -> None:
         if self.detector:
             try:
                 await self.detector.stop()
+                self._detector_started = False
             except Exception as e:
                 logger.warning(f"停止唤醒词检测器失败: {e}")
 
@@ -108,13 +135,17 @@ class WakeWordPlugin(Plugin):
         唤醒词检测回调.
         """
         try:
+            logger.info(f"唤醒词命中: {wake_word}")
             if self._ctx.is_speaking():
                 await self._cmd.abort_speaking(AbortReason.WAKE_WORD_DETECTED)
                 if self._audio_plugin and self._audio_plugin.codec:
                     await self._audio_plugin.codec.clear_audio_queue()
             else:
-                # 启动自动对话
-                await self._cmd.connect_protocol()
+                connected = await self._cmd.connect_protocol()
+                if not connected:
+                    logger.warning("唤醒后连接协议失败")
+                    return
+
                 from src.constants.constants import ListeningMode
 
                 mode = (

@@ -66,6 +66,10 @@ class UIPlugin(Plugin):
         from src.core.event_bus import Events
 
         self._ctx.event_bus.on(Events.NETWORK_ERROR, self._on_network_error)
+        self._ctx.event_bus.on(Events.PROTOCOL_CONNECTED, self._on_protocol_connected)
+        self._ctx.event_bus.on(
+            Events.PROTOCOL_DISCONNECTED, self._on_protocol_disconnected
+        )
         self._ctx.event_bus.on(Events.MUSIC_STATE_CHANGED, self._on_music_state_changed)
         self._ctx.event_bus.on(Events.MUSIC_LYRICS_UPDATE, self._on_music_lyrics_update)
         logger.info("UIPlugin 已订阅音乐事件")
@@ -143,6 +147,19 @@ class UIPlugin(Plugin):
                 self.view_manager.main_model.set_status("未连接", connected=False)
             else:
                 self.view_manager.set_status("未连接", connected=False)
+
+    async def _on_protocol_connected(self, _protocol=None) -> None:
+        if not self.view_manager:
+            return
+
+        status_text = self.STATE_TEXT_MAP.get(self._ctx.get_device_state(), "待命")
+        if self._is_gui:
+            self.view_manager.main_model.set_status(status_text, connected=True)
+        else:
+            self.view_manager.set_status(status_text, connected=True)
+
+    async def _on_protocol_disconnected(self, _=None) -> None:
+        await self._on_network_error()
 
     def register_resources(self, pool) -> None:
         view_manager = self.view_manager

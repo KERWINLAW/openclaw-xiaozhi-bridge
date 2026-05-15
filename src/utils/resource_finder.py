@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import platform as plat
 import sys
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -66,8 +67,14 @@ def get_user_data_dir() -> Path:
     - Windows: C:/Users/xxx/AppData/Local/{app_name}
     - macOS:   ~/Library/Application Support/{app_name}
     - Linux:   ~/.local/share/{app_name} 或 $XDG_DATA_HOME/{app_name}
+
+    可通过 PY_XIAOZHI_DATA_DIR 覆盖，便于便携运行、沙箱测试或多实例隔离。
     """
-    p = Path(platformdirs.user_data_dir(get_app_name()))
+    override = os.environ.get("PY_XIAOZHI_DATA_DIR")
+    if override:
+        p = Path(override).expanduser()
+    else:
+        p = Path(platformdirs.user_data_dir(get_app_name()))
     p.mkdir(parents=True, exist_ok=True)
     return p
 

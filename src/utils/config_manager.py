@@ -33,6 +33,9 @@ class ConfigManager:
                 "MQTT_INFO": None,
                 "ACTIVATION_VERSION": "v2",  # 可选值: v1, v2
                 "AUTHORIZATION_URL": "https://xiaozhi.me/",
+                "PRECONNECT_ENABLED": True,
+                "KEEP_CONNECTED": True,
+                "PRECONNECT_RETRY_SECONDS": 15,
             },
         },
         "WAKE_WORD_OPTIONS": {
@@ -44,8 +47,8 @@ class ConfigManager:
             "KEYWORDS_SCORE": 1.8,
             "KEYWORDS_THRESHOLD": 0.2,
             "NUM_TRAILING_BLANKS": 1,
-            "WAKE_WORD": "你好小智",
-            "WAKE_WORD_LANG": "zh"
+            "WAKE_WORD": "小智",
+            "WAKE_WORD_LANG": "zh",
         },
         "CAMERA": {
             "camera_index": 0,

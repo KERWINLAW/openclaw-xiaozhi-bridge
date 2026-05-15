@@ -1,4 +1,5 @@
 import asyncio
+import os
 import threading
 import time
 from pathlib import Path
@@ -114,6 +115,7 @@ class WakeWordDetector:
     def _load_model(self) -> bool:
         """Load sherpa-onnx KeywordSpotter model."""
         try:
+            self._prepare_onnxruntime_dll_path()
             import sherpa_onnx
 
             encoder_path = self._model_dir / "encoder.onnx"
@@ -160,6 +162,33 @@ class WakeWordDetector:
         except ImportError as e:
             logger.error(f"sherpa_onnx 导入失败: {e}", exc_info=True)
             return False
+
+    @staticmethod
+    def _prepare_onnxruntime_dll_path() -> None:
+        """Prefer the venv onnxruntime DLL over Windows' System32 DLL.
+
+        Some Windows installs include an older C:\\Windows\\System32\\onnxruntime.dll.
+        If that wins the DLL search, sherpa-onnx can fail with an ORT API version
+        mismatch before the wake-word model loads.
+        """
+        if os.name != "nt":
+            return
+
+        try:
+            import onnxruntime
+
+            capi_dir = Path(onnxruntime.__file__).resolve().parent / "capi"
+            if not capi_dir.exists():
+                return
+
+            os.add_dll_directory(str(capi_dir))
+            current_path = os.environ.get("PATH", "")
+            capi_text = str(capi_dir)
+            if capi_text.lower() not in current_path.lower():
+                os.environ["PATH"] = capi_text + os.pathsep + current_path
+            logger.debug(f"已优先使用 onnxruntime DLL 目录: {capi_dir}")
+        except Exception as e:
+            logger.debug(f"准备 onnxruntime DLL 路径失败: {e}")
         except Exception as e:
             logger.error(f"加载模型失败: {e}", exc_info=True)
             return False

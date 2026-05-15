@@ -221,6 +221,7 @@ class ServiceContainer:
 
             # 设置协议
             self.protocol.set_protocol(protocol)
+            self._configure_protocol_keepalive()
 
             # 注册事件处理器
             self._setup_event_handlers()
@@ -237,6 +238,7 @@ class ServiceContainer:
             await self.plugins.notify_device_state_changed(
                 self.state.device_state
             )
+            self._start_preconnect_if_enabled()
 
             # 等待关闭信号
             await self.tasks.wait_shutdown()
@@ -284,6 +286,49 @@ class ServiceContainer:
 
         # 设置音频直连通道（TTS 音频不经过 EventBus，减少延迟）
         self.protocol.set_audio_handler(audio_plugin.on_incoming_audio)
+
+    def _configure_protocol_keepalive(self) -> None:
+        keep_connected = bool(
+            self.config.get_config("SYSTEM_OPTIONS.NETWORK.KEEP_CONNECTED", True)
+        )
+        protocol = self.protocol.protocol
+        if protocol and hasattr(protocol, "enable_auto_reconnect"):
+            protocol.enable_auto_reconnect(
+                keep_connected,
+                max_attempts=999999 if keep_connected else 0,
+            )
+
+    def _start_preconnect_if_enabled(self) -> None:
+        if not self.config.get_config("SYSTEM_OPTIONS.NETWORK.PRECONNECT_ENABLED", True):
+            return
+        self.tasks.spawn(
+            self._preconnect_protocol_loop(),
+            name="protocol:preconnect",
+        )
+
+    async def _preconnect_protocol_loop(self) -> None:
+        retry_seconds = float(
+            self.config.get_config(
+                "SYSTEM_OPTIONS.NETWORK.PRECONNECT_RETRY_SECONDS", 15
+            )
+        )
+        retry_seconds = max(5.0, retry_seconds)
+
+        while self.tasks.running and not self._shutting_down:
+            if self.protocol.is_audio_channel_opened():
+                return
+
+            logger.info("Preconnecting Xiaozhi cloud...")
+            opened = await self.connect_protocol()
+            if opened:
+                logger.info("Xiaozhi cloud preconnected; waiting for wake word.")
+                return
+
+            logger.warning(
+                "Xiaozhi cloud preconnect failed; retrying in %.0f seconds.",
+                retry_seconds,
+            )
+            await asyncio.sleep(retry_seconds)
 
     def _setup_event_handlers(self) -> None:
         """
@@ -343,7 +388,7 @@ class ServiceContainer:
     # 事件处理器
     # -------------------------
     async def _on_audio_channel_opened(self, _=None) -> None:
-        await self.state.set_device_state(DeviceState.LISTENING)
+        logger.info("Protocol channel is open; device remains idle until listening starts.")
 
     async def _on_audio_channel_closed(self, _=None) -> None:
         await self.state.set_device_state(DeviceState.IDLE)

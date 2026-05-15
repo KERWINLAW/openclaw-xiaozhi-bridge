@@ -2,6 +2,9 @@
 /config
 
 .venv
+.uv-cache/
+.uv-python/
+.runtime/
 **/__pycache__/
 
 .idea/
