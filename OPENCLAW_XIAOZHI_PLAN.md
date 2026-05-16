@@ -1,6 +1,6 @@
 # OpenClaw + Xiaozhi Voice Bridge
 
-This workspace uses `py-xiaozhi` as the voice and MCP baseline for OpenClaw integration.
+This workspace provides the Xiaozhi voice front end and local MCP bridge for OpenClaw integration.
 
 ## Relationship
 

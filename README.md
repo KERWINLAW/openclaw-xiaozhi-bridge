@@ -1,6 +1,6 @@
 # OpenClaw Xiaozhi Voice Bridge
 
-这是一个基于 `py-xiaozhi` 改造的 Windows 语音桥接项目。它把小智作为语音前台，把本机 OpenClaw 作为 MCP 工具后端，用语音把任务转交给 OpenClaw。
+这是一个 Windows 语音桥接项目。它把小智语音能力和本机 OpenClaw MCP 工具整合到同一个工作流里，用语音把任务转交给 OpenClaw。
 
 ## 项目关系
 
@@ -195,14 +195,6 @@ Get-Content .\.runtime\data\logs\app.log -Tail 80
 - `scripts/run_xiaozhi_cli.ps1`：PowerShell 启动入口。
 - `scripts/stop_xiaozhi.ps1`：停止本项目小智后台。
 - `OPENCLAW_XIAOZHI_PLAN.md`：本地集成说明。
-
-## 上游来源
-
-本项目基于开源项目 `py-xiaozhi` 二次开发，并保留其 MIT License。上游项目地址：
-
-https://github.com/huangjunsen0406/py-xiaozhi
-
-本仓库的 README 只描述当前 OpenClaw 语音桥接版本，不代表上游项目，也不包含上游名单或推广信息。
 
 ## 许可证
 

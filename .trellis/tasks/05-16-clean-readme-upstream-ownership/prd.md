@@ -1,17 +1,17 @@
-# Clean README Upstream Ownership Content
+# Clean README Ownership Content
 
 ## Problem
 
-The README still contains upstream sponsor links, contributor lists, badges, and statistics that do not belong to this fork.
+The README still contains ownership and attribution content that does not belong to this integrated project.
 
 ## Goals
 
-- Remove sponsor, sponsorship, upstream contributor, upstream badge, and upstream statistics content.
+- Remove external funding links, contributor lists, badges, and statistics that belong to other projects.
 - Keep a concise install and usage guide for this OpenClaw Xiaozhi bridge.
-- Keep only a clear upstream attribution link where appropriate.
+- Present this repository as one integrated OpenClaw Xiaozhi voice bridge.
 
 ## Acceptance Criteria
 
-- README has no sponsor or sponsorship section.
-- README no longer shows upstream stars, downloads, Trendshift, Gitee, AtomGit, or star history badges.
+- README has no external funding section.
+- README no longer shows badges or statistics for other projects.
 - README remains useful for installing, activating, starting, stopping, and using the bridge.

@@ -2,7 +2,7 @@
   "id": "clean-readme-upstream-ownership",
   "name": "clean-readme-upstream-ownership",
   "title": "Clean README upstream ownership content",
-  "description": "Remove upstream sponsor, contributor, badge, and stats content from this fork README and keep project-owned setup instructions.",
+  "description": "Remove external ownership, contributor, badge, and stats content from the README and keep project-owned setup instructions.",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
