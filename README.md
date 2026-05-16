@@ -29,6 +29,133 @@
 
 简体中文 | [English](README.en.md)
 
+## OpenClaw + 小智语音桥接版
+
+本仓库是在 `py-xiaozhi` 基础上增加的 OpenClaw 语音桥接版本。小智负责唤醒、语音识别、对话和 TTS 播放；OpenClaw 作为本机能力后端，通过 MCP 工具被小智调用。
+
+当前新增能力：
+
+- 注册 `self.openclaw.ask`，把指定问题交给本机 OpenClaw agent 处理。
+- 注册 `self.openclaw.status`，检查 OpenClaw CLI 与 Gateway 是否可用。
+- 支持 Windows 隐藏后台启动、单实例保护，避免同时跑两个小智。
+- 默认关闭空闲永久重连，降低后台 CPU 与日志负载。
+- 使用小智云端 TTS，不使用 Windows SAPI 本地音色。
+
+### 安装准备
+
+需要 Windows 10/11、麦克风、扬声器、稳定网络，以及已安装并激活的 OpenClaw。建议先确认 OpenClaw Gateway 正常：
+
+```powershell
+openclaw --version
+openclaw gateway status --json
+```
+
+如果 `rpc.ok` 为 `true`，说明本机 OpenClaw Gateway 可被本项目调用。
+
+### 安装步骤
+
+```powershell
+git clone https://github.com/KERWINLAW/openclaw-xiaozhi-bridge.git
+cd openclaw-xiaozhi-bridge
+.\scripts\setup_xiaozhi.ps1
+.\scripts\check_xiaozhi_setup.ps1
+```
+
+`setup_xiaozhi.ps1` 会使用 `uv sync --extra gui --python 3.12` 创建本地 `.venv`，并把 Python 运行时、缓存和小智运行数据留在项目目录内。若本机没有 `uv`，请先按 [uv 官方文档](https://docs.astral.sh/uv/) 安装。
+
+检查脚本应看到：
+
+```text
+python_ok=true
+openclaw_tool_registered=true
+openclaw_status_registered=true
+```
+
+### 首次激活
+
+首次运行不要跳过激活：
+
+```powershell
+.\scripts\run_xiaozhi_cli.ps1 -Mode cli
+```
+
+根据终端或弹出的激活提示完成小智设备激活。激活成功后，日常启动可以使用 `-SkipActivation`。
+
+### 启动方式
+
+图形界面：
+
+```powershell
+.\scripts\run_xiaozhi_cli.ps1 -Mode gui -SkipActivation
+```
+
+命令行界面：
+
+```powershell
+.\scripts\run_xiaozhi_cli.ps1 -Mode cli -SkipActivation
+```
+
+隐藏后台模式：
+
+```text
+start_xiaozhi_hidden.vbs
+```
+
+停止后台小智：
+
+```text
+stop_xiaozhi.bat
+```
+
+隐藏模式会启用 headless UI、单实例锁和低占用默认配置。重复启动时，第二个进程会自动退出，不会再生成两个小智监听器。
+
+### 使用方式
+
+普通聊天、天气、音乐等能力直接对小智说即可。需要让本机 OpenClaw 介入时，语音里明确点名 OpenClaw：
+
+```text
+你好小智，问 OpenClaw：现在 OpenClaw 网关状态是否正常
+```
+
+```text
+你好小智，让 OpenClaw 帮我总结当前项目的启动方式
+```
+
+```text
+你好小智，把这个交给 OpenClaw：检查这个项目有没有后台重复启动风险
+```
+
+实际调用链：
+
+```text
+语音唤醒 -> 小智识别与云端决策 -> MCP 工具 self.openclaw.ask/status
+-> 本机 openclaw agent -> 结果回传小智 -> 小智 TTS 播放
+```
+
+复杂代码修改仍建议在 Codex/OpenClaw 窗口中完成；语音桥接更适合状态查询、轻量任务、语音触发和把明确任务转交给 OpenClaw。
+
+### 常用排查
+
+检查小智依赖和 MCP 工具：
+
+```powershell
+.\scripts\check_xiaozhi_setup.ps1
+```
+
+检查 OpenClaw Gateway：
+
+```powershell
+openclaw gateway status --json
+```
+
+停止可能残留的小智后台：
+
+```powershell
+.\scripts\stop_xiaozhi.ps1
+```
+
+项目运行数据在 `.runtime\data`，虚拟环境在 `.venv`，这些本地目录不会提交到 Git。
+
 ## 项目简介
 
 py-xiaozhi 是一个使用 Python 实现的小智语音客户端，旨在通过代码学习和在没有硬件条件下体验 AI 小智的语音功能。

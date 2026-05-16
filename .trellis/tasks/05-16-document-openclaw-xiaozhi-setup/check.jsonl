@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/git-workflow.md", "reason": "Verify branch, commit, and main push behavior."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Use lightweight quality checks for documentation changes."}

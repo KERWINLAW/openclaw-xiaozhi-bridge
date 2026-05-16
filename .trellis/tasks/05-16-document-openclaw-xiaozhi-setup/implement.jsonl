@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/git-workflow.md", "reason": "Merging and pushing to main should follow project git guidance."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Documentation and repo checks should be verified before push."}
