@@ -3,7 +3,8 @@
 管理 CLI/GUI 显示界面。
 """
 
-from typing import TYPE_CHECKING, Optional
+import os
+from typing import TYPE_CHECKING
 
 from src.constants.constants import AbortReason, DeviceState
 from src.logging import get_logger
@@ -27,7 +28,7 @@ class UIPlugin(Plugin):
         DeviceState.SPEAKING: "说话中...",
     }
 
-    def __init__(self, mode: Optional[str] = None) -> None:
+    def __init__(self, mode: str | None = None) -> None:
         super().__init__()
         self.mode = (mode or "cli").lower()
         self.view_manager = None
@@ -41,6 +42,12 @@ class UIPlugin(Plugin):
 
     def _create_view_manager(self):
         """创建 ViewManager 实例."""
+        if os.environ.get("PY_XIAOZHI_HEADLESS") == "1":
+            self._is_gui = False
+            self.view_manager = None
+            logger.info("Headless 模式，跳过 UI 管理器")
+            return
+
         if self.mode == "gui":
             from src.ui.gui import ViewManager
 

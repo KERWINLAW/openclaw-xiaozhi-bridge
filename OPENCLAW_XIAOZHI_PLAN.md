@@ -73,7 +73,12 @@ PowerShell entry point:
 ```powershell
 .\scripts\run_xiaozhi_cli.ps1 -Mode cli -SkipActivation
 .\scripts\run_xiaozhi_cli.ps1 -Mode gui -SkipActivation
+.\scripts\run_xiaozhi_cli.ps1 -Mode cli -SkipActivation -Headless
 ```
+
+Only one Xiaozhi instance is allowed per runtime data directory. If a second
+GUI/CLI/hidden launch is attempted, it exits instead of starting a duplicate
+wake listener.
 
 ## OpenClaw Delegation
 
@@ -106,4 +111,15 @@ No local Windows SAPI wake feedback is used. Wake response audio comes from Xiao
 
 ## Preconnect Behavior
 
-The app preconnects to Xiaozhi cloud after startup and keeps the protocol connection alive. Opening the protocol channel no longer switches the device into `LISTENING`; audio capture starts only after wake-word detection or a manual listen command.
+The app preconnects to Xiaozhi cloud after startup, but idle keepalive is off by
+default. This avoids repeated reconnect/MCP initialization loops when the cloud
+side closes an idle channel. Opening the protocol channel no longer switches the
+device into `LISTENING`; audio capture starts only after wake-word detection or a
+manual listen command.
+
+Low-power defaults:
+
+- `SYSTEM_OPTIONS.NETWORK.KEEP_CONNECTED`: `false`
+- `SYSTEM_OPTIONS.NETWORK.AUTO_RECONNECT_MAX_ATTEMPTS`: `3`
+- `WAKE_WORD_OPTIONS.NUM_THREADS`: `2`
+- `LOGGING.LEVEL`: `INFO` is respected even in a development checkout

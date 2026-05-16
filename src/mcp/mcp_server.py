@@ -87,7 +87,7 @@ class McpServer:
             else:
                 data = message
 
-            logger.info(
+            logger.debug(
                 f"[MCP] 解析消息: {json.dumps(data, ensure_ascii=False, indent=2)}"
             )
 
@@ -103,7 +103,7 @@ class McpServer:
 
             # 忽略通知
             if method.startswith("notifications"):
-                logger.info(f"[MCP] 忽略通知消息: {method}")
+                logger.debug(f"[MCP] 忽略通知消息: {method}")
                 return
 
             params = data.get("params", {})
@@ -113,7 +113,7 @@ class McpServer:
                 logger.error(f"Invalid id for method: {method}")
                 return
 
-            logger.info(
+            logger.debug(
                 f"[MCP] 处理方法: {method}, ID: {request_id}, 参数: {params}"
             )
 
@@ -202,7 +202,7 @@ class McpServer:
         """
         处理工具调用请求.
         """
-        logger.info(
+        logger.debug(
             f"[MCP] 收到工具调用请求! ID={request_id}, 参数={params}"
         )
 
@@ -229,12 +229,13 @@ class McpServer:
         # 获取参数
         arguments = params.get("arguments", {})
 
-        logger.info(f"[MCP] 开始执行工具 {tool_name}, 参数: {arguments}")
+        logger.debug(f"[MCP] 开始执行工具 {tool_name}, 参数: {arguments}")
 
         # 异步调用工具
         try:
             result = await tool.call(arguments)
-            logger.info(f"[MCP] 工具 {tool_name} 执行成功，结果: {result}")
+            logger.info(f"[MCP] 工具 {tool_name} 执行成功")
+            logger.debug(f"[MCP] 工具 {tool_name} 执行结果: {result}")
             await self._reply_result(request_id, json.loads(result))
         except Exception as e:
             logger.error(
@@ -270,7 +271,7 @@ class McpServer:
         }
 
         result_len = len(json.dumps(result))
-        logger.info(
+        logger.debug(
             f"[MCP] 发送成功响应: ID={request_id}, 结果长度={result_len}"
         )
 

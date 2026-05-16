@@ -4,6 +4,7 @@ import locale
 import os
 import signal
 import sys
+from pathlib import Path
 
 # Windows: 强制 C/C++ 运行时使用 UTF-8，解决 sherpa-onnx 读取声调拼音文件乱码
 if sys.platform == "win32":
@@ -62,6 +63,35 @@ from src.constants.system import SystemConstants  # noqa: E402
 from src.logging import get_logger  # noqa: E402
 
 logger = get_logger()
+_instance_lock = None
+
+
+def acquire_single_instance() -> bool:
+    """Prevent duplicate Xiaozhi instances for the same runtime data dir."""
+    global _instance_lock
+
+    if os.environ.get("PY_XIAOZHI_ALLOW_MULTIPLE") == "1":
+        logger.warning("已通过 PY_XIAOZHI_ALLOW_MULTIPLE=1 关闭单实例保护")
+        return True
+
+    try:
+        from src.utils.resource_finder import get_user_data_dir
+        from src.utils.single_instance import SingleInstance
+
+        data_dir = Path(
+            os.environ.get("PY_XIAOZHI_DATA_DIR") or get_user_data_dir()
+        ).resolve()
+        instance_lock = SingleInstance(f"py-xiaozhi:{data_dir}")
+        if not instance_lock.acquire():
+            logger.warning("已有一个小智实例正在运行，本次启动退出")
+            return False
+
+        _instance_lock = instance_lock
+        logger.info(f"已获取小智单实例锁: {data_dir}")
+        return True
+    except Exception as e:
+        logger.error(f"获取小智单实例锁失败: {e}", exc_info=True)
+        return False
 
 
 async def handle_activation(mode: str) -> bool:
@@ -140,6 +170,9 @@ if __name__ == "__main__":
     try:
         # 使用已解析的参数
         args = _args
+
+        if not acquire_single_instance():
+            sys.exit(0)
 
         # 检测Wayland环境并设置Qt平台插件配置
         import os
@@ -232,4 +265,6 @@ if __name__ == "__main__":
         logger.error(f"程序异常退出: {e}", exc_info=True)
         exit_code = 1
     finally:
+        if _instance_lock:
+            _instance_lock.release()
         sys.exit(exit_code)

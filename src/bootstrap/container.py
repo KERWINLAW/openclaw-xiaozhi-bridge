@@ -4,7 +4,8 @@
 """
 
 import asyncio
-from typing import Any, Awaitable, Callable, Optional
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from src.bootstrap.protocols import PluginCommands, PluginContext, WindowContext
 from src.constants.constants import DeviceState, ListeningMode
@@ -175,9 +176,9 @@ class ServiceContainer:
         self.resource_pool = ResourcePool()
 
         # 适配器
-        self._plugin_context: Optional[PluginContextAdapter] = None
-        self._plugin_commands: Optional[PluginCommandsAdapter] = None
-        self._window_context: Optional[WindowContextAdapter] = None
+        self._plugin_context: PluginContextAdapter | None = None
+        self._plugin_commands: PluginCommandsAdapter | None = None
+        self._window_context: WindowContextAdapter | None = None
 
         # 中止标志
         self._aborted = False
@@ -289,13 +290,18 @@ class ServiceContainer:
 
     def _configure_protocol_keepalive(self) -> None:
         keep_connected = bool(
-            self.config.get_config("SYSTEM_OPTIONS.NETWORK.KEEP_CONNECTED", True)
+            self.config.get_config("SYSTEM_OPTIONS.NETWORK.KEEP_CONNECTED", False)
+        )
+        reconnect_attempts = int(
+            self.config.get_config(
+                "SYSTEM_OPTIONS.NETWORK.AUTO_RECONNECT_MAX_ATTEMPTS", 3
+            )
         )
         protocol = self.protocol.protocol
         if protocol and hasattr(protocol, "enable_auto_reconnect"):
             protocol.enable_auto_reconnect(
                 keep_connected,
-                max_attempts=999999 if keep_connected else 0,
+                max_attempts=max(0, reconnect_attempts) if keep_connected else 0,
             )
 
     def _start_preconnect_if_enabled(self) -> None:

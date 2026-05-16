@@ -6,11 +6,13 @@
 - 动态日志级别调整
 """
 
+from __future__ import annotations
+
 import os
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class Environment(Enum):
@@ -34,7 +36,7 @@ class LoggingConfig:
     format_type: str = "colored"  # colored, json, simple
 
     # 文件配置
-    log_dir: Optional[Path] = None
+    log_dir: Path | None = None
     log_file: str = "app.log"
     error_log_file: str = "error.log"
 
@@ -87,10 +89,10 @@ class LoggingConfigManager:
     日志配置管理器.
     """
 
-    _instance: Optional["LoggingConfigManager"] = None
-    _config: Optional[LoggingConfig] = None
+    _instance: LoggingConfigManager | None = None
+    _config: LoggingConfig | None = None
 
-    def __new__(cls) -> "LoggingConfigManager":
+    def __new__(cls) -> LoggingConfigManager:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -100,7 +102,7 @@ class LoggingConfigManager:
             self._config = self._load_config()
 
     @classmethod
-    def get_instance(cls) -> "LoggingConfigManager":
+    def get_instance(cls) -> LoggingConfigManager:
         """
         获取配置管理器单例.
         """
@@ -113,6 +115,7 @@ class LoggingConfigManager:
         加载日志配置.
         """
         config = LoggingConfig()
+        config_level_from_file = False
 
         # 尝试从 ConfigManager 加载配置
         try:
@@ -122,7 +125,9 @@ class LoggingConfigManager:
             logging_cfg = cfg_manager.get_config("LOGGING", {})
 
             if logging_cfg:
-                config.level = logging_cfg.get("LEVEL", config.level)
+                if "LEVEL" in logging_cfg:
+                    config.level = logging_cfg.get("LEVEL", config.level)
+                    config_level_from_file = True
                 config.format_type = logging_cfg.get("FORMAT_TYPE", config.format_type)
                 config.enable_console = logging_cfg.get(
                     "ENABLE_CONSOLE", config.enable_console
@@ -162,7 +167,7 @@ class LoggingConfigManager:
 
         # 根据环境自动调整（仅在未通过环境变量显式设置级别时）
         env = self._get_environment()
-        if not env_level:
+        if not env_level and not config_level_from_file:
             if env == Environment.DEVELOPMENT:
                 config.level = "DEBUG"
             elif env == Environment.PRODUCTION:

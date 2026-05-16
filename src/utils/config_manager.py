@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 import uuid
-from typing import Any, Dict
+from typing import Any
 
 from src.logging import get_logger
 from src.utils.resource_finder import (
@@ -34,14 +34,15 @@ class ConfigManager:
                 "ACTIVATION_VERSION": "v2",  # 可选值: v1, v2
                 "AUTHORIZATION_URL": "https://xiaozhi.me/",
                 "PRECONNECT_ENABLED": True,
-                "KEEP_CONNECTED": True,
+                "KEEP_CONNECTED": False,
+                "AUTO_RECONNECT_MAX_ATTEMPTS": 3,
                 "PRECONNECT_RETRY_SECONDS": 15,
             },
         },
         "WAKE_WORD_OPTIONS": {
             "USE_WAKE_WORD": True,
             "MODEL_PATH": "models/zh",
-            "NUM_THREADS": 5,
+            "NUM_THREADS": 2,
             "PROVIDER": "cpu",
             "MAX_ACTIVE_PATHS": 2,
             "KEYWORDS_SCORE": 1.8,
@@ -174,7 +175,7 @@ class ConfigManager:
         cache_dir = get_user_cache_dir()
         logger.debug(f"缓存目录: {cache_dir.absolute()}")
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """
         加载配置文件，如果不存在则创建.
         """

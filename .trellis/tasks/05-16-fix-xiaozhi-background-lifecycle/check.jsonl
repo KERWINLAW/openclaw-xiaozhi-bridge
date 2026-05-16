@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Quality gate expectations for Python changes."}
+{"file": ".trellis/spec/backend/asyncio-guidelines.md", "reason": "Verify no untracked background async work is introduced."}
