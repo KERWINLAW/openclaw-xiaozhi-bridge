@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/asyncio-guidelines.md", "reason": "Callback dispatch and connection recovery are async lifecycle code."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Keep diagnostics consistent while fixing disconnect handling."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Use existing recoverable error handling patterns."}

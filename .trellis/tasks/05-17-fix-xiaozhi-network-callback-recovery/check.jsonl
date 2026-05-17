@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Run lightweight Python quality checks."}
+{"file": ".trellis/spec/backend/asyncio-guidelines.md", "reason": "Verify async callback handling does not introduce untracked tasks."}

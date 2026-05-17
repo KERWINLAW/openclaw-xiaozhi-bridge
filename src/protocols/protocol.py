@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import json
 
 from src.constants.constants import AbortReason, ListeningMode
@@ -72,6 +73,18 @@ class Protocol:
             callback: 回调函数，接收参数 (attempt: int, max_attempts: int)
         """
         self._on_reconnecting = callback
+
+    async def _notify_network_error(self, message: str) -> None:
+        """通知网络错误，兼容同步和异步回调."""
+        if not self._on_network_error:
+            return
+
+        try:
+            result = self._on_network_error(message)
+            if inspect.isawaitable(result):
+                await result
+        except Exception as e:
+            logger.error(f"调用网络错误回调失败: {e}")
 
     async def send_text(self, message):
         """
@@ -354,9 +367,9 @@ class Protocol:
                     self._auto_reconnect_enabled
                     and self._reconnect_attempts >= self._max_reconnect_attempts
                 ):
-                    await self._on_network_error(f"连接丢失且重连失败: {reason}")
+                    await self._notify_network_error(f"连接丢失且重连失败: {reason}")
                 else:
-                    await self._on_network_error(f"连接丢失: {reason}")
+                    await self._notify_network_error(f"连接丢失: {reason}")
 
     async def _attempt_reconnect(self, original_reason: str):
         """尝试自动重连（公共逻辑）.
@@ -393,14 +406,14 @@ class Protocol:
                 )
                 if self._reconnect_attempts >= self._max_reconnect_attempts:
                     if self._on_network_error:
-                        await self._on_network_error(
+                        await self._notify_network_error(
                             f"重连失败，已达到最大重连次数: {original_reason}"
                         )
         except Exception as e:
             logger.error(f"重连过程中出错: {e}")
             if self._reconnect_attempts >= self._max_reconnect_attempts:
                 if self._on_network_error:
-                    await self._on_network_error(f"重连异常: {str(e)}")
+                    await self._notify_network_error(f"重连异常: {str(e)}")
 
     async def _cancel_monitor_task(self):
         """取消并等待连接监控任务完成."""
